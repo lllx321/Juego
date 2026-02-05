@@ -18,19 +18,22 @@
     <h2>🎰 Ruleta</h2>
     <p>Nivel de ruleta: <span id="ruletaNivel">0</span></p>
     <p>Costo de giro: <span id="ruletaCosto">100</span> clicks</p>
-    <button id="btnGirar">Girar ruleta</button>
+
+    <!-- Botones de multi-giro -->
+    <div style="margin-bottom: 10px;">
+      <button id="btnGirar1">Girar x1</button>
+      <button id="btnGirar10">Girar x10</button>
+      <button id="btnGirar50">Girar x50</button>
+      <button id="btnGirarMax">Girar MAX</button>
+    </div>
 
     <hr>
 
     <h2>🐾 Inventario</h2>
     <p>Mascotas: <span id="invCount">0</span> / <span id="invMax">50</span></p>
-    <p>Equipadas: <span id="equipadasCount">0</span> / 3</p>
 
-    <!-- Botones -->
-    <div style="display:flex; gap:8px; margin-bottom:8px;">
-      <button id="btnFusionarTodo">🔀 Fusionar todas</button>
-      <button id="btnEquipBest">⭐ Equipar mejores</button>
-    </div>
+    <!-- Botón de fusionar todas -->
+    <button id="btnFusionarTodo">🔀 Fusionar todas</button>
 
     <div id="inventarioLista"></div>
   </div>
@@ -50,12 +53,6 @@
     <p>Prestigios: <span id="prestigios">0</span></p>
     <p>Costo: <span id="prestigioCosto">250</span></p>
     <button id="btnPrestigio">Renacer</button>
-    <p id="prestigeHint"></p>
-
-    <hr>
-
-    <h3>💪 Mejoras</h3>
-    <div id="mejorasLista"></div>
   </div>
 
   <!-- Zona central -->
@@ -74,9 +71,6 @@
       <div id="modalContenido"></div>
     </div>
   </div>
-
-  <!-- Contenedor confetti -->
-  <div id="confettiContainer" aria-hidden="true"></div>
 
   <script src="script.js"></script>
 </body>

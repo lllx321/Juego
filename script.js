@@ -1,9 +1,10 @@
 let clicks = 0;
 let prestigios = 0;
-let prestigioCosto = 1000;
+let prestigioCosto = 250; // según lo que habíamos hablado
 
 let ruletaNivel = 0;
-let ruletaCostoBase = [100, 250, 500, 1000, 2000, 5000];
+let costoBaseRuleta = 100;
+let multiplicadorCostoRuleta = 1.6; // escala por nivel
 
 let mejoraRuletaNivel = 0;
 let mejoraRuletaMax = 5;
@@ -12,34 +13,6 @@ let mejoraRuletaCosto = 1000;
 let inventario = [];
 let inventarioMax = 50;
 let mascotasEquipadasMax = 3;
-
-// ---------- GUARDADO ----------
-function guardarJuego() {
-  const data = {
-    clicks,
-    prestigios,
-    prestigioCosto,
-    ruletaNivel,
-    mejoraRuletaNivel,
-    mejoraRuletaCosto,
-    inventario
-  };
-  localStorage.setItem("clickerMascotasSave", JSON.stringify(data));
-}
-
-function cargarJuego() {
-  const save = localStorage.getItem("clickerMascotasSave");
-  if (!save) return;
-
-  const data = JSON.parse(save);
-  clicks = data.clicks ?? 0;
-  prestigios = data.prestigios ?? 0;
-  prestigioCosto = data.prestigioCosto ?? 1000;
-  ruletaNivel = data.ruletaNivel ?? 0;
-  mejoraRuletaNivel = data.mejoraRuletaNivel ?? 0;
-  mejoraRuletaCosto = data.mejoraRuletaCosto ?? 1000;
-  inventario = data.inventario ?? [];
-}
 
 // DOM
 const clicksSpan = document.getElementById("clicks");
@@ -59,7 +32,7 @@ const invCountSpan = document.getElementById("invCount");
 const invMaxSpan = document.getElementById("invMax");
 const inventarioLista = document.getElementById("inventarioLista");
 
-// Modal descripción
+// Modal
 const modal = document.getElementById("modalMascota");
 const modalContenido = document.getElementById("modalContenido");
 const modalCerrar = document.getElementById("modalCerrar");
@@ -70,14 +43,18 @@ const panelTienda = document.getElementById("panelTienda");
 const btnMascotas = document.getElementById("btnMascotas");
 const btnTienda = document.getElementById("btnTienda");
 
-// Botones
+// Botones principales
 document.getElementById("btnClick").addEventListener("click", () => {
   clicks += calcularMultiplicadorTotal();
   actualizarUI();
-  guardarJuego();
 });
 
-document.getElementById("btnGirar").addEventListener("click", girarRuleta);
+// Botones ruleta (multi-giro)
+document.getElementById("btnGirar1").addEventListener("click", () => girarMultiple(1));
+document.getElementById("btnGirar10").addEventListener("click", () => girarMultiple(10));
+document.getElementById("btnGirar50").addEventListener("click", () => girarMultiple(50));
+document.getElementById("btnGirarMax").addEventListener("click", () => girarMaximo());
+
 document.getElementById("btnMejorarRuleta").addEventListener("click", mejorarRuleta);
 document.getElementById("btnPrestigio").addEventListener("click", hacerPrestigio);
 document.getElementById("btnFusionarTodo").addEventListener("click", fusionarTodas);
@@ -93,7 +70,7 @@ btnTienda.addEventListener("click", () => {
   panelMascotas.classList.remove("activo");
 });
 
-// Mascotas con descripción
+// Mascotas
 const mascotasPool = [
   { nombre: "Miel", mult: 1.1, rareza: "Común", desc: "Una mascota dulce que aumenta un poco tus clicks." },
   { nombre: "Coco", mult: 1.3, rareza: "Común", desc: "Travieso pero útil para empezar." },
@@ -103,15 +80,26 @@ const mascotasPool = [
   { nombre: "Celesthar", mult: 50, rareza: "Divina", desc: "Entidad celestial de poder infinito." }
 ];
 
-function girarRuleta() {
-  const costo = ruletaCostoBase[ruletaNivel] || 5000;
-  if (clicks < costo) return alert("No tienes suficientes clicks");
-  if (inventario.length >= inventarioMax) return alert("Inventario lleno");
+// ====== RUleta ======
+
+function costoGiroActual() {
+  return Math.floor(costoBaseRuleta * Math.pow(multiplicadorCostoRuleta, ruletaNivel));
+}
+
+function girarUnaVez() {
+  if (inventario.length >= inventarioMax) return false;
+
+  const costo = costoGiroActual();
+  if (clicks < costo) return false;
 
   clicks -= costo;
 
-  let bonus = mejoraRuletaNivel * 0.1;
-  let index = Math.floor(Math.random() * mascotasPool.length * (1 - bonus));
+  // Mejora de probabilidades por nivel
+  let bonus = mejoraRuletaNivel * 0.1 + ruletaNivel * 0.05;
+
+  let r = Math.random();
+  let index = Math.floor((1 - Math.pow(r, 1 + bonus)) * mascotasPool.length);
+
   if (index < 0) index = 0;
   if (index >= mascotasPool.length) index = mascotasPool.length - 1;
 
@@ -128,9 +116,41 @@ function girarRuleta() {
 
   inventario.push(mascota);
   anuncioMascota.textContent = `Te salió: ${mascota.nombre} (${mascota.rareza}) x${mascota.mult}`;
-  actualizarUI();
-  guardarJuego();
+  return true;
 }
+
+function girarMultiple(n) {
+  let girosHechos = 0;
+  for (let i = 0; i < n; i++) {
+    if (!girarUnaVez()) break;
+    girosHechos++;
+  }
+  if (girosHechos === 0) {
+    alert("No puedes girar (sin espacio o sin clicks).");
+  }
+  actualizarUI();
+}
+
+function girarMaximo() {
+  const espacioLibre = inventarioMax - inventario.length;
+  if (espacioLibre <= 0) {
+    alert("Inventario lleno.");
+    return;
+  }
+
+  const costo = costoGiroActual();
+  const maxPorClicks = Math.floor(clicks / costo);
+  const giros = Math.min(espacioLibre, maxPorClicks);
+
+  if (giros <= 0) {
+    alert("No tienes clicks suficientes.");
+    return;
+  }
+
+  girarMultiple(giros);
+}
+
+// ====== MEJORAS / PRESTIGIO ======
 
 function mejorarRuleta() {
   if (mejoraRuletaNivel >= mejoraRuletaMax) return alert("Ya está al máximo");
@@ -140,7 +160,6 @@ function mejorarRuleta() {
   mejoraRuletaNivel++;
   mejoraRuletaCosto = Math.floor(mejoraRuletaCosto * 2);
   actualizarUI();
-  guardarJuego();
 }
 
 function hacerPrestigio() {
@@ -151,22 +170,29 @@ function hacerPrestigio() {
 
   mejoraRuletaNivel = 0;
   mejoraRuletaCosto = 1000;
-  prestigioCosto = Math.floor(prestigioCosto * 2.2);
 
-  lanzarConfetti();
+  prestigioCosto = Math.floor(prestigioCosto * 3);
+
   actualizarUI();
-  guardarJuego();
 }
+
+// ====== MULTIPLICADOR ======
 
 function calcularMultiplicadorTotal() {
-  let total = 1 + prestigios;
+  let base = 1;
+  let bonusMascotas = 0;
+
   inventario.forEach(m => {
-    if (m.equipada) total += m.mult; // suma
+    if (m.equipada) bonusMascotas += m.mult;
   });
-  return total;
+
+  let multRebirth = 1 + prestigios;
+
+  return (base + bonusMascotas) * multRebirth;
 }
 
-// --- FUSIÓN ---
+// ====== FUSIÓN ======
+
 function puedeFusionar(m) {
   return inventario.filter(x => x.nombre === m.nombre && x.rareza === m.rareza).length >= 2;
 }
@@ -209,48 +235,16 @@ function fusionarTodas() {
     }
   }
   actualizarUI();
-  guardarJuego();
 }
 
-// --- CONFETI FULLSCREEN ---
-const confettiContainer = document.createElement("div");
-confettiContainer.style.position = "fixed";
-confettiContainer.style.top = "0";
-confettiContainer.style.left = "0";
-confettiContainer.style.width = "100%";
-confettiContainer.style.height = "100%";
-confettiContainer.style.pointerEvents = "none";
-confettiContainer.style.zIndex = "9999";
-document.body.appendChild(confettiContainer);
+// ====== UI ======
 
-function lanzarConfetti() {
-  const colors = ["#FFD700","#FF69B4","#00BFFF","#7CFC00","#FF7F50","#DA70D6"];
-  const total = 150;
-
-  for (let i = 0; i < total; i++) {
-    const el = document.createElement("div");
-    el.style.position = "absolute";
-    el.style.background = colors[Math.floor(Math.random() * colors.length)];
-    el.style.left = (Math.random() * 100) + "vw";
-    el.style.top = (-30 - Math.random() * 25) + "vh";
-    const w = 6 + Math.random() * 18;
-    el.style.width = `${w}px`;
-    el.style.height = `${w * 1.2}px`;
-    const dur = 2200 + Math.random() * 2800;
-    const delay = Math.random() * 300;
-    el.style.animation = `confetti-fall-full ${dur}ms linear ${delay}ms forwards`;
-    confettiContainer.appendChild(el);
-    setTimeout(() => el.remove(), dur + delay + 200);
-  }
-}
-
-// --- UI ---
 function actualizarUI() {
   clicksSpan.textContent = Math.floor(clicks);
   multTotalSpan.textContent = calcularMultiplicadorTotal().toFixed(2);
 
-  ruletaNivelSpan.textContent = mejoraRuletaNivel;
-  ruletaCostoSpan.textContent = ruletaCostoBase[ruletaNivel] || 5000;
+  ruletaNivelSpan.textContent = ruletaNivel;
+  ruletaCostoSpan.textContent = costoGiroActual();
 
   mejoraRuletaNivelSpan.textContent = mejoraRuletaNivel;
   mejoraRuletaCostoSpan.textContent = mejoraRuletaCosto;
@@ -271,7 +265,9 @@ function renderInventario() {
     const div = document.createElement("div");
     div.className = "mascotaCard";
 
-    if (puedeFusionar(m)) div.classList.add("fusionable");
+    if (puedeFusionar(m)) {
+      div.classList.add("fusionable");
+    }
 
     div.innerHTML = `
       <strong>${m.nombre}</strong> (${m.rareza})<br>
@@ -293,14 +289,15 @@ function renderInventario() {
     btnEquipar.textContent = m.equipada ? "Quitar" : "Equipar";
     btnEquipar.onclick = (e) => {
       e.stopPropagation();
+
       const equipadas = inventario.filter(x => x.equipada).length;
       if (!m.equipada && equipadas >= mascotasEquipadasMax) {
-        alert("Solo puedes equipar 3 mascotas");
+        alert("Solo puedes equipar " + mascotasEquipadasMax + " mascotas.");
         return;
       }
+
       m.equipada = !m.equipada;
       actualizarUI();
-      guardarJuego();
     };
 
     const btnEliminar = document.createElement("button");
@@ -309,7 +306,6 @@ function renderInventario() {
       e.stopPropagation();
       inventario.splice(i, 1);
       actualizarUI();
-      guardarJuego();
     };
 
     div.appendChild(btnEquipar);
@@ -322,6 +318,5 @@ modalCerrar.onclick = () => {
   modal.style.display = "none";
 };
 
-// Cargar partida al iniciar
-cargarJuego();
+// Inicial
 actualizarUI();
