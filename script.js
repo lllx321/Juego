@@ -14,7 +14,7 @@ let inventario = [];
 let inventarioMax = 50;
 let mascotasEquipadasMax = 3;
 
-// DOM
+
 const clicksSpan = document.getElementById("clicks");
 const multTotalSpan = document.getElementById("multTotal");
 const anuncioMascota = document.getElementById("anuncioMascota");
@@ -27,6 +27,43 @@ const mejoraRuletaCostoSpan = document.getElementById("mejoraRuletaCosto");
 
 const prestigiosSpan = document.getElementById("prestigios");
 const prestigioCostoSpan = document.getElementById("prestigioCosto");
+// VARIABLES PRINCIPALES
+let clicks = 0;
+let prestigios = 0;
+let multiplicadorPrestigio = 1;
+
+let bonusMejoras = 0; // Por ahora 0, luego puedes meter mejoras reales
+let ruletaNivel = 0;
+
+let inventarioMax = 50;
+let inventario = [];
+let equipadas = [];
+
+const COSTO_RULETA = 100;
+
+// ============================
+// MASCOTAS Y RAREZAS
+// ============================
+const rarezas = [
+  { nombre: "Común", chance: 60, multMin: 1, multMax: 2 },
+  { nombre: "Rara", chance: 25, multMin: 2, multMax: 5 },
+  { nombre: "Épica", chance: 10, multMin: 5, multMax: 15 },
+  { nombre: "Legendaria", chance: 4, multMin: 15, multMax: 30 },
+  { nombre: "Celestial", chance: 1, multMin: 30, multMax: 49 }
+];
+
+// ============================
+// ELEMENTOS HTML
+// ============================
+const clicksSpan = document.getElementById("clicks");
+const multTotalSpan = document.getElementById("multTotal");
+const btnClick = document.getElementById("btnClick");
+
+const btnGirar1 = document.getElementById("btnGirar1");
+const btnGirar10 = document.getElementById("btnGirar10");
+const btnGirar50 = document.getElementById("btnGirar50");
+const btnGirarMax = document.getElementById("btnGirarMax");
+>>>>>>> 72d3f82 (Primer commit)
 
 const invCountSpan = document.getElementById("invCount");
 const invMaxSpan = document.getElementById("invMax");
