@@ -1,48 +1,180 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Clicker con Mascotas</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: Arial, sans-serif; background:#111; color:#eee; padding:20px; }
-    button { margin:5px; padding:8px 12px; cursor:pointer; }
-    .box { border:1px solid #444; padding:10px; margin-bottom:10px; border-radius:8px; }
-    .pet { border:1px solid #555; padding:6px; margin:4px 0; }
-    .equipped { border-color: gold; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f0f14;
+      color: #eee;
+      overflow-x: hidden;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background: #2a2a3a;
+      color: #fff;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    button:hover { background: #3a3a55; }
+    button:active { transform: scale(0.95); }
+
+    #topBar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #151520;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 10;
+    }
+
+    #panelMascotas, #panelTienda {
+      position: fixed;
+      top: 50px;
+      bottom: 0;
+      width: 300px;
+      background: #14141f;
+      padding: 10px;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+      z-index: 5;
+    }
+
+    #panelMascotas { left: 0; transform: translateX(-100%); }
+    #panelMascotas.activo { transform: translateX(0); }
+
+    #panelTienda { right: 0; transform: translateX(100%); }
+    #panelTienda.activo { transform: translateX(0); }
+
+    #game {
+      margin-top: 80px;
+      text-align: center;
+    }
+
+    #btnClick {
+      font-size: 24px;
+      padding: 20px 40px;
+      margin: 20px;
+    }
+
+    .mascotaCard {
+      background: #1c1c2a;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 6px;
+      border: 1px solid #333;
+    }
+
+    .fusionable {
+      border: 2px solid gold;
+      box-shadow: 0 0 10px gold;
+    }
+
+    #modalMascota {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 20;
+    }
+
+    #modalMascota.activo {
+      display: flex;
+      opacity: 1;
+    }
+
+    #modalCaja {
+      background: #1b1b28;
+      padding: 20px;
+      border-radius: 10px;
+      min-width: 250px;
+      position: relative;
+    }
+
+    #modalCerrar {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      cursor: pointer;
+    }
+
+    .confetti {
+      position: fixed;
+      top: -10px;
+      width: 8px;
+      height: 12px;
+      background: red;
+      animation: fall 2s linear forwards;
+      z-index: 100;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <h1>🖱️ Clicker con Mascotas</h1>
+<div id="topBar">
+  <button id="btnMascotas">🐾 Mascotas</button>
+  <button id="btnTienda">🛒 Tienda</button>
+</div>
 
-  <div class="box">
-    <p>💰 Monedas: <span id="coins">0</span></p>
-    <p>♻️ Rebirths: <span id="rebirths">0</span></p>
-    <p>✨ Multiplicador total: x<span id="multiplier">1</span></p>
-    <button id="clickBtn">Hacer Click</button>
-    <button id="rebirthBtn">Rebirth (10000 monedas)</button>
+<div id="panelMascotas">
+  <h2>🎰 Ruleta</h2>
+  <p>Costo por giro: 100 clicks</p>
+  <button id="btnGirar1">Girar x1</button>
+  <button id="btnGirar10">Girar x10</button>
+  <button id="btnGirar50">Girar x50</button>
+  <button id="btnGirarMax">Girar MAX</button>
+
+  <hr>
+
+  <h2>🐾 Inventario</h2>
+  <p>Mascotas: <span id="invCount">0</span> / <span id="invMax">50</span></p>
+  <button id="btnEquiparMejores">⭐ Equipar mejores</button>
+  <button id="btnFusionarTodo">🔀 Fusionar todas</button>
+
+  <div id="inventarioLista"></div>
+</div>
+
+<div id="panelTienda">
+  <h2>🛒 Tienda</h2>
+  <h3>⭐ Prestigio</h3>
+  <p>Prestigios: <span id="prestigios">0</span></p>
+  <p>Costo: <span id="prestigioCosto">250</span></p>
+  <button id="btnPrestigio">Renacer</button>
+</div>
+
+<div id="game">
+  <h1>Clicks: <span id="clicks">0</span></h1>
+  <h2>Multiplicador total: x<span id="multTotal">1</span></h2>
+  <button id="btnClick">CLICK 💥</button>
+  <p id="anuncioMascota"></p>
+</div>
+
+<div id="modalMascota">
+  <div id="modalCaja">
+    <span id="modalCerrar">❌</span>
+    <div id="modalContenido"></div>
   </div>
+</div>
 
-  <div class="box">
-    <h2>🎰 Ruleta</h2>
-    <button onclick="spin(1)">1x</button>
-    <button onclick="spin(10)">10x</button>
-    <button onclick="spin(50)">50x</button>
-    <button onclick="spin('MAX')">MAX</button>
-  </div>
-
-  <div class="box">
-    <h2>🐾 Mascotas Equipadas (máx 3)</h2>
-    <div id="equippedPets"></div>
-    <button onclick="equipBest()">Equipar Mejores</button>
-  </div>
-
-  <div class="box">
-    <h2>🎒 Inventario (<span id="invCount"></span>/<span id="invLimit"></span>)</h2>
-    <div id="inventory"></div>
-    <button onclick="fusePets()">Fusionar 2 primeras</button>
-  </div>
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

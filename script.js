@@ -1,202 +1,198 @@
-// ====== Estado del juego ======
-let game = {
-  coins: 0,
-  rebirths: 0,
-  inventoryLimit: 20,
-  inventory: [],
-  equipped: [],
-};
+let clicks = 0;
+let prestigios = 0;
+let multiplicadorPrestigio = 1;
 
-// ====== Datos de mascotas ======
-const rarities = [
-  { name: "Común", chance: 60, bonus: 0.1 },
-  { name: "Raro", chance: 25, bonus: 0.3 },
-  { name: "Épico", chance: 10, bonus: 1 },
-  { name: "Legendario", chance: 5, bonus: 3 },
+let inventarioMax = 50;
+let inventario = [];
+let equipadas = [];
+
+const COSTO_RULETA = 100;
+
+const rarezas = [
+  { nombre: "Común", chance: 60, multMin: 1, multMax: 2 },
+  { nombre: "Rara", chance: 25, multMin: 2, multMax: 5 },
+  { nombre: "Épica", chance: 10, multMin: 5, multMax: 15 },
+  { nombre: "Legendaria", chance: 4, multMin: 15, multMax: 30 },
+  { nombre: "Celestial", chance: 1, multMin: 30, multMax: 49 }
 ];
 
-// ====== Utilidades ======
-function saveGame() {
-  localStorage.setItem("clickerGame", JSON.stringify(game));
+const clicksSpan = document.getElementById("clicks");
+const multTotalSpan = document.getElementById("multTotal");
+const invCountSpan = document.getElementById("invCount");
+const invMaxSpan = document.getElementById("invMax");
+const inventarioLista = document.getElementById("inventarioLista");
+const anuncioMascota = document.getElementById("anuncioMascota");
+const prestigiosSpan = document.getElementById("prestigios");
+const prestigioCostoSpan = document.getElementById("prestigioCosto");
+
+function calcularBonusMascotas() {
+  let total = 0;
+  equipadas.forEach(m => total += m.mult);
+  return total;
 }
 
-function loadGame() {
-  const data = localStorage.getItem("clickerGame");
-  if (data) game = JSON.parse(data);
+function calcularMultiplicadorTotal() {
+  return (1 + calcularBonusMascotas()) * multiplicadorPrestigio;
 }
 
-function getRebirthMultiplier() {
-  return 1 + game.rebirths * 0.5;
+function actualizarUI() {
+  clicksSpan.textContent = Math.floor(clicks);
+  multTotalSpan.textContent = calcularMultiplicadorTotal().toFixed(2);
+  invCountSpan.textContent = inventario.length;
+  invMaxSpan.textContent = inventarioMax;
+  prestigiosSpan.textContent = prestigios;
+  prestigioCostoSpan.textContent = 250 * (prestigios + 1);
+  renderInventario();
+  guardar();
 }
 
-function getPetsBonus() {
-  return game.equipped.reduce((sum, p) => sum + p.bonus, 0);
-}
+document.getElementById("btnClick").onclick = () => {
+  clicks += calcularMultiplicadorTotal();
+  actualizarUI();
+};
 
-function getTotalMultiplier() {
-  return (1 + getPetsBonus()) * getRebirthMultiplier();
-}
+// Paneles
+document.getElementById("btnMascotas").onclick = () => {
+  document.getElementById("panelMascotas").classList.toggle("activo");
+};
+document.getElementById("btnTienda").onclick = () => {
+  document.getElementById("panelTienda").classList.toggle("activo");
+};
 
-// ====== Click ======
-document.getElementById("clickBtn").addEventListener("click", () => {
-  const gain = 1 * getTotalMultiplier();
-  game.coins += gain;
-  updateUI();
-  saveGame();
-});
+// Ruleta
+function tirarRuleta(veces) {
+  let espacio = inventarioMax - inventario.length;
+  if (espacio <= 0) return alert("Inventario lleno");
 
-// ====== Rebirth ======
-document.getElementById("rebirthBtn").addEventListener("click", () => {
-  if (game.coins >= 10000) {
-    game.coins = 0;
-    game.rebirths += 1;
-    game.inventory = [];
-    game.equipped = [];
-    updateUI();
-    saveGame();
-  } else {
-    alert("Necesitas 10000 monedas para rebirth.");
+  let maxTiradas = Math.min(veces, espacio);
+  let costo = maxTiradas * COSTO_RULETA;
+  if (clicks < costo) return alert("No tienes clicks");
+
+  clicks -= costo;
+
+  for (let i = 0; i < maxTiradas; i++) {
+    const m = generarMascota();
+    inventario.push(m);
+    anuncioMascota.textContent = `Obtuviste: ${m.rareza} x${m.mult}`;
   }
-});
-
-// ====== Ruleta ======
-function spin(times) {
-  let spins = times === "MAX" ? Math.floor(game.coins / 10) : times;
-  if (spins <= 0) return;
-
-  for (let i = 0; i < spins; i++) {
-    if (game.inventory.length >= game.inventoryLimit) break;
-    rollPet();
-  }
-
-  updateUI();
-  saveGame();
+  actualizarUI();
 }
 
-function rollPet() {
-  const roll = Math.random() * 100;
+function generarMascota() {
+  let roll = Math.random() * 100;
   let acc = 0;
-  let rarity = rarities[0];
-
-  for (let r of rarities) {
+  for (let r of rarezas) {
     acc += r.chance;
     if (roll <= acc) {
-      rarity = r;
-      break;
+      let mult = r.multMin + Math.random() * (r.multMax - r.multMin);
+      return { rareza: r.nombre, mult: parseFloat(mult.toFixed(2)) };
     }
   }
-
-  const pet = {
-    id: Date.now() + Math.random(),
-    name: "Mascota " + rarity.name,
-    rarity: rarity.name,
-    bonus: rarity.bonus,
-    level: 1,
-  };
-
-  game.inventory.push(pet);
+  return { rareza: "Común", mult: 1 };
 }
 
-// ====== Equipar ======
-function equipPet(id) {
-  if (game.equipped.length >= 3) {
-    alert("Solo puedes equipar 3 mascotas.");
-    return;
-  }
-  const idx = game.inventory.findIndex(p => p.id === id);
-  if (idx !== -1) {
-    const pet = game.inventory.splice(idx, 1)[0];
-    game.equipped.push(pet);
-    updateUI();
-    saveGame();
-  }
-}
+document.getElementById("btnGirar1").onclick = () => tirarRuleta(1);
+document.getElementById("btnGirar10").onclick = () => tirarRuleta(10);
+document.getElementById("btnGirar50").onclick = () => tirarRuleta(50);
+document.getElementById("btnGirarMax").onclick = () => tirarRuleta(inventarioMax);
 
-function unequipPet(id) {
-  const idx = game.equipped.findIndex(p => p.id === id);
-  if (idx !== -1) {
-    const pet = game.equipped.splice(idx, 1)[0];
-    game.inventory.push(pet);
-    updateUI();
-    saveGame();
-  }
-}
+// Inventario
+function renderInventario() {
+  inventarioLista.innerHTML = "";
+  const fusionable = inventario.length >= 2;
 
-function equipBest() {
-  // devolver todo al inventario
-  game.inventory = game.inventory.concat(game.equipped);
-  game.equipped = [];
+  inventario.forEach((m) => {
+    const div = document.createElement("div");
+    div.className = "mascotaCard" + (fusionable ? " fusionable" : "");
+    div.innerHTML = `<b>${m.rareza}</b><br>Mult: x${m.mult}
+      <br><button>Ver</button> <button>${equipadas.includes(m) ? "Quitar" : "Equipar"}</button>`;
 
-  // ordenar por bonus
-  game.inventory.sort((a, b) => b.bonus - a.bonus);
+    const [btnVer, btnEq] = div.querySelectorAll("button");
 
-  // equipar los 3 mejores
-  while (game.equipped.length < 3 && game.inventory.length > 0) {
-    game.equipped.push(game.inventory.shift());
-  }
+    btnVer.onclick = () => abrirModal(m);
+    btnEq.onclick = () => {
+      if (equipadas.includes(m)) {
+        equipadas = equipadas.filter(e => e !== m);
+      } else {
+        if (equipadas.length >= 3) return alert("Máx 3 equipadas");
+        equipadas.push(m);
+      }
+      actualizarUI();
+    };
 
-  updateUI();
-  saveGame();
-}
-
-// ====== Fusión ======
-function fusePets() {
-  if (game.inventory.length < 2) {
-    alert("Necesitas al menos 2 mascotas en el inventario.");
-    return;
-  }
-
-  const p1 = game.inventory.shift();
-  const p2 = game.inventory.shift();
-
-  const newPet = {
-    id: Date.now() + Math.random(),
-    name: "Fusión",
-    rarity: p1.rarity,
-    bonus: p1.bonus + p2.bonus,
-    level: (p1.level || 1) + (p2.level || 1),
-  };
-
-  game.inventory.push(newPet);
-  updateUI();
-  saveGame();
-}
-
-// ====== UI ======
-function updateUI() {
-  document.getElementById("coins").textContent = Math.floor(game.coins);
-  document.getElementById("rebirths").textContent = game.rebirths;
-  document.getElementById("multiplier").textContent = getTotalMultiplier().toFixed(2);
-  document.getElementById("invCount").textContent = game.inventory.length;
-  document.getElementById("invLimit").textContent = game.inventoryLimit;
-
-  const invDiv = document.getElementById("inventory");
-  invDiv.innerHTML = "";
-  game.inventory.forEach(p => {
-    const d = document.createElement("div");
-    d.className = "pet";
-    d.innerHTML = `
-      <strong>${p.name}</strong> [${p.rarity}]<br>
-      Bonus: +${p.bonus}<br>
-      <button onclick="equipPet(${p.id})">Equipar</button>
-    `;
-    invDiv.appendChild(d);
-  });
-
-  const eqDiv = document.getElementById("equippedPets");
-  eqDiv.innerHTML = "";
-  game.equipped.forEach(p => {
-    const d = document.createElement("div");
-    d.className = "pet equipped";
-    d.innerHTML = `
-      <strong>${p.name}</strong> [${p.rarity}]<br>
-      Bonus: +${p.bonus}<br>
-      <button onclick="unequipPet(${p.id})">Quitar</button>
-    `;
-    eqDiv.appendChild(d);
+    inventarioLista.appendChild(div);
   });
 }
 
-// ====== Init ======
-loadGame();
-updateUI();
+document.getElementById("btnEquiparMejores").onclick = () => {
+  equipadas = [];
+  const ordenadas = [...inventario].sort((a,b) => b.mult - a.mult);
+  for (let i = 0; i < Math.min(3, ordenadas.length); i++) equipadas.push(ordenadas[i]);
+  actualizarUI();
+};
+
+document.getElementById("btnFusionarTodo").onclick = () => {
+  if (inventario.length < 2) return alert("Necesitas 2 o más");
+  let suma = 0;
+  inventario.forEach(m => suma += m.mult);
+  inventario = [{ rareza: "Fusionada", mult: parseFloat((suma * 0.6).toFixed(2)) }];
+  equipadas = [];
+  actualizarUI();
+};
+
+// Prestigio
+document.getElementById("btnPrestigio").onclick = () => {
+  const costo = 250 * (prestigios + 1);
+  if (clicks < costo) return alert("No tienes clicks");
+  clicks = 0;
+  prestigios++;
+  multiplicadorPrestigio = 1 + prestigios * 0.5;
+  inventario = [];
+  equipadas = [];
+  lanzarConfeti();
+  actualizarUI();
+};
+
+// Modal
+const modal = document.getElementById("modalMascota");
+const modalContenido = document.getElementById("modalContenido");
+document.getElementById("modalCerrar").onclick = () => cerrarModal();
+
+function abrirModal(m) {
+  modalContenido.innerHTML = `<h3>${m.rareza}</h3><p>Multiplicador: x${m.mult}</p>`;
+  modal.classList.add("activo");
+}
+function cerrarModal() {
+  modal.classList.remove("activo");
+}
+
+// Confeti
+function lanzarConfeti() {
+  for (let i = 0; i < 100; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = `hsl(${Math.random()*360},100%,50%)`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 2000);
+  }
+}
+
+// Guardado
+function guardar() {
+  const data = { clicks, prestigios, multiplicadorPrestigio, inventario, equipadas, inventarioMax };
+  localStorage.setItem("clickerSave", JSON.stringify(data));
+}
+function cargar() {
+  const data = JSON.parse(localStorage.getItem("clickerSave"));
+  if (!data) return;
+  clicks = data.clicks || 0;
+  prestigios = data.prestigios || 0;
+  multiplicadorPrestigio = data.multiplicadorPrestigio || 1;
+  inventario = data.inventario || [];
+  equipadas = data.equipadas || [];
+  inventarioMax = data.inventarioMax || 50;
+}
+
+cargar();
+actualizarUI();
