@@ -1,83 +1,46 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Clicker con Mascotas</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; padding:20px; }
+    button { margin:5px; padding:8px 12px; cursor:pointer; }
+    .box { border:1px solid #444; padding:10px; margin-bottom:10px; border-radius:8px; }
+    .pet { border:1px solid #555; padding:6px; margin:4px 0; }
+    .equipped { border-color: gold; }
+  </style>
 </head>
 <body>
 
-  <!-- Botones superiores -->
-  <div id="topBar">
-    <button id="btnMascotas">🐾 Mascotas</button>
-    <button id="btnTienda">🛒 Tienda</button>
+  <h1>🖱️ Clicker con Mascotas</h1>
+
+  <div class="box">
+    <p>💰 Monedas: <span id="coins">0</span></p>
+    <p>♻️ Rebirths: <span id="rebirths">0</span></p>
+    <p>✨ Multiplicador total: x<span id="multiplier">1</span></p>
+    <button id="clickBtn">Hacer Click</button>
+    <button id="rebirthBtn">Rebirth (10000 monedas)</button>
   </div>
 
-  <!-- Panel izquierdo: Mascotas / Ruleta -->
-  <div id="panelMascotas">
+  <div class="box">
     <h2>🎰 Ruleta</h2>
-    <p>Nivel de ruleta: <span id="ruletaNivel">0</span></p>
-    <p>Costo de giro: <span id="ruletaCosto">100</span> clicks</p>
-
-    <!-- Botones de multi-giro -->
-    <div style="margin-bottom: 10px;">
-      <button id="btnGirar1">Girar x1</button>
-      <button id="btnGirar10">Girar x10</button>
-      <button id="btnGirar50">Girar x50</button>
-      <button id="btnGirarMax">Girar MAX</button>
-    </div>
-
-    <hr>
-
-    <h2>🐾 Inventario</h2>
-    <p>Mascotas: <span id="invCount">0</span> / <span id="invMax">50</span></p>
-
-<<<<<<< HEAD
-    <!-- Botón de fusionar todas -->
-    <button id="btnFusionarTodo">🔀 Fusionar todas</button>
-=======
-    <!-- Botones de gestión -->
-    <div style="margin-bottom: 10px;">
-      <button id="btnEquiparMejores">⭐ Equipar mejores</button>
-      <button id="btnFusionarTodo">🔀 Fusionar todas</button>
-    </div>
->>>>>>> 72d3f82 (Primer commit)
-
-    <div id="inventarioLista"></div>
+    <button onclick="spin(1)">1x</button>
+    <button onclick="spin(10)">10x</button>
+    <button onclick="spin(50)">50x</button>
+    <button onclick="spin('MAX')">MAX</button>
   </div>
 
-  <!-- Panel derecho: Tienda -->
-  <div id="panelTienda">
-    <h2>🛒 Tienda</h2>
-
-    <h3>Mejorar Ruleta</h3>
-    <p>Nivel actual: <span id="mejoraRuletaNivel">0</span> / 5</p>
-    <p>Costo: <span id="mejoraRuletaCosto">1000</span> clicks</p>
-    <button id="btnMejorarRuleta">Mejorar ruleta</button>
-
-    <hr>
-
-    <h3>⭐ Prestigios</h3>
-    <p>Prestigios: <span id="prestigios">0</span></p>
-    <p>Costo: <span id="prestigioCosto">250</span></p>
-    <button id="btnPrestigio">Renacer</button>
+  <div class="box">
+    <h2>🐾 Mascotas Equipadas (máx 3)</h2>
+    <div id="equippedPets"></div>
+    <button onclick="equipBest()">Equipar Mejores</button>
   </div>
 
-  <!-- Zona central -->
-  <div id="game">
-    <h1>Clicks: <span id="clicks">0</span></h1>
-    <h2>Multiplicador total: x<span id="multTotal">1</span></h2>
-    <button id="btnClick">CLICK 💥</button>
-
-    <p id="anuncioMascota"></p>
-  </div>
-
-  <!-- Modal de descripción de mascota -->
-  <div id="modalMascota">
-    <div id="modalCaja">
-      <span id="modalCerrar">❌</span>
-      <div id="modalContenido"></div>
-    </div>
+  <div class="box">
+    <h2>🎒 Inventario (<span id="invCount"></span>/<span id="invLimit"></span>)</h2>
+    <div id="inventory"></div>
+    <button onclick="fusePets()">Fusionar 2 primeras</button>
   </div>
 
   <script src="script.js"></script>
