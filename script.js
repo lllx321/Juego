@@ -1,30 +1,65 @@
+// ============================
+// VARIABLES PRINCIPALES
+// ============================
 let clicks = 0;
 let prestigios = 0;
 let multiplicadorPrestigio = 1;
+
+let bonusMejoras = 0;
+let ruletaNivel = 0;
 
 let inventarioMax = 50;
 let inventario = [];
 let equipadas = [];
 
-const COSTO_RULETA = 100;
+let COSTO_RULETA = 100;
 
-const rarezas = [
+// ============================
+// RAREZAS
+// ============================
+const rarezasBase = [
   { nombre: "Común", chance: 60, multMin: 1, multMax: 2 },
   { nombre: "Rara", chance: 25, multMin: 2, multMax: 5 },
   { nombre: "Épica", chance: 10, multMin: 5, multMax: 15 },
   { nombre: "Legendaria", chance: 4, multMin: 15, multMax: 30 },
-  { nombre: "Celestial", chance: 1, multMin: 30, multMax: 49 }
+  { nombre: "Celestial", chance: 1, multMin: 30, multMax: 50 }
 ];
 
+// ============================
+// ELEMENTOS HTML
+// ============================
 const clicksSpan = document.getElementById("clicks");
 const multTotalSpan = document.getElementById("multTotal");
+const btnClick = document.getElementById("btnClick");
+
+const btnGirar1 = document.getElementById("btnGirar1");
+const btnGirar10 = document.getElementById("btnGirar10");
+const btnGirar50 = document.getElementById("btnGirar50");
+const btnGirarMax = document.getElementById("btnGirarMax");
+
 const invCountSpan = document.getElementById("invCount");
 const invMaxSpan = document.getElementById("invMax");
 const inventarioLista = document.getElementById("inventarioLista");
+
+const btnEquiparMejores = document.getElementById("btnEquiparMejores");
+const btnFusionarTodo = document.getElementById("btnFusionarTodo");
+
 const anuncioMascota = document.getElementById("anuncioMascota");
+
 const prestigiosSpan = document.getElementById("prestigios");
 const prestigioCostoSpan = document.getElementById("prestigioCosto");
+const btnPrestigio = document.getElementById("btnPrestigio");
 
+const ruletaNivelSpan = document.getElementById("ruletaNivel");
+const ruletaCostoSpan = document.getElementById("ruletaCosto");
+
+const mejoraRuletaNivelSpan = document.getElementById("mejoraRuletaNivel");
+const mejoraRuletaCostoSpan = document.getElementById("mejoraRuletaCosto");
+const btnMejorarRuleta = document.getElementById("btnMejorarRuleta");
+
+// ============================
+// FUNCIONES BASE
+// ============================
 function calcularBonusMascotas() {
   let total = 0;
   equipadas.forEach(m => total += m.mult);
@@ -32,167 +67,235 @@ function calcularBonusMascotas() {
 }
 
 function calcularMultiplicadorTotal() {
-  return (1 + calcularBonusMascotas()) * multiplicadorPrestigio;
+  const base = 1;
+  const bonusMascotas = calcularBonusMascotas();
+  const total = (base + bonusMascotas + bonusMejoras) * multiplicadorPrestigio;
+  return total;
 }
 
 function actualizarUI() {
   clicksSpan.textContent = Math.floor(clicks);
   multTotalSpan.textContent = calcularMultiplicadorTotal().toFixed(2);
+
   invCountSpan.textContent = inventario.length;
   invMaxSpan.textContent = inventarioMax;
+
   prestigiosSpan.textContent = prestigios;
   prestigioCostoSpan.textContent = 250 * (prestigios + 1);
+
+  ruletaNivelSpan.textContent = ruletaNivel;
+  ruletaCostoSpan.textContent = COSTO_RULETA;
+
+  mejoraRuletaNivelSpan.textContent = ruletaNivel;
+  mejoraRuletaCostoSpan.textContent = 1000 * (ruletaNivel + 1);
+
   renderInventario();
   guardar();
 }
 
-document.getElementById("btnClick").onclick = () => {
+btnClick.addEventListener("click", () => {
   clicks += calcularMultiplicadorTotal();
   actualizarUI();
-};
+});
 
-// Paneles
-document.getElementById("btnMascotas").onclick = () => {
-  document.getElementById("panelMascotas").classList.toggle("activo");
-};
-document.getElementById("btnTienda").onclick = () => {
-  document.getElementById("panelTienda").classList.toggle("activo");
-};
-
-// Ruleta
+// ============================
+// RULETA
+// ============================
 function tirarRuleta(veces) {
-  let espacio = inventarioMax - inventario.length;
-  if (espacio <= 0) return alert("Inventario lleno");
+  let espacioDisponible = inventarioMax - inventario.length;
+  if (espacioDisponible <= 0) {
+    alert("Inventario lleno!");
+    return;
+  }
 
-  let maxTiradas = Math.min(veces, espacio);
-  let costo = maxTiradas * COSTO_RULETA;
-  if (clicks < costo) return alert("No tienes clicks");
+  let maxTiradas = Math.min(veces, espacioDisponible);
+  let costoTotal = maxTiradas * COSTO_RULETA;
 
-  clicks -= costo;
+  if (clicks < costoTotal) {
+    alert("No tienes suficientes clicks");
+    return;
+  }
+
+  clicks -= costoTotal;
 
   for (let i = 0; i < maxTiradas; i++) {
-    const m = generarMascota();
-    inventario.push(m);
-    anuncioMascota.textContent = `Obtuviste: ${m.rareza} x${m.mult}`;
+    const mascota = generarMascota();
+    inventario.push(mascota);
+    anuncioMascota.textContent = `Obtuviste: ${mascota.rareza} x${mascota.mult.toFixed(2)}`;
   }
+
   actualizarUI();
 }
 
 function generarMascota() {
+  // Mejora de ruleta: aumenta un poco las chances buenas
+  const rarezas = rarezasBase.map(r => ({ ...r }));
+  if (ruletaNivel > 0) {
+    rarezas[0].chance -= ruletaNivel * 2; // baja comunes
+    rarezas[4].chance += ruletaNivel * 0.5; // sube celestiales un poco
+  }
+
   let roll = Math.random() * 100;
-  let acc = 0;
+  let acumulado = 0;
+
   for (let r of rarezas) {
-    acc += r.chance;
-    if (roll <= acc) {
+    acumulado += r.chance;
+    if (roll <= acumulado) {
       let mult = r.multMin + Math.random() * (r.multMax - r.multMin);
-      return { rareza: r.nombre, mult: parseFloat(mult.toFixed(2)) };
+      return {
+        rareza: r.nombre,
+        mult: parseFloat(mult.toFixed(2))
+      };
     }
   }
+
   return { rareza: "Común", mult: 1 };
 }
 
-document.getElementById("btnGirar1").onclick = () => tirarRuleta(1);
-document.getElementById("btnGirar10").onclick = () => tirarRuleta(10);
-document.getElementById("btnGirar50").onclick = () => tirarRuleta(50);
-document.getElementById("btnGirarMax").onclick = () => tirarRuleta(inventarioMax);
+btnGirar1.addEventListener("click", () => tirarRuleta(1));
+btnGirar10.addEventListener("click", () => tirarRuleta(10));
+btnGirar50.addEventListener("click", () => tirarRuleta(50));
+btnGirarMax.addEventListener("click", () => tirarRuleta(inventarioMax));
 
-// Inventario
+// ============================
+// INVENTARIO
+// ============================
 function renderInventario() {
   inventarioLista.innerHTML = "";
-  const fusionable = inventario.length >= 2;
 
   inventario.forEach((m) => {
     const div = document.createElement("div");
-    div.className = "mascotaCard" + (fusionable ? " fusionable" : "");
-    div.innerHTML = `<b>${m.rareza}</b><br>Mult: x${m.mult}
-      <br><button>Ver</button> <button>${equipadas.includes(m) ? "Quitar" : "Equipar"}</button>`;
+    div.className = "mascota rareza-" + m.rareza + (equipadas.includes(m) ? " equipada" : "");
 
-    const [btnVer, btnEq] = div.querySelectorAll("button");
+    const info = document.createElement("span");
+    info.textContent = `${m.rareza} | x${m.mult}`;
 
-    btnVer.onclick = () => abrirModal(m);
-    btnEq.onclick = () => {
-      if (equipadas.includes(m)) {
+    const btn = document.createElement("button");
+    const equipada = equipadas.includes(m);
+    btn.textContent = equipada ? "Quitar" : "Equipar";
+
+    btn.addEventListener("click", () => {
+      if (equipada) {
         equipadas = equipadas.filter(e => e !== m);
       } else {
-        if (equipadas.length >= 3) return alert("Máx 3 equipadas");
+        if (equipadas.length >= 3) {
+          alert("Solo puedes equipar 3 mascotas");
+          return;
+        }
         equipadas.push(m);
       }
       actualizarUI();
-    };
+    });
 
+    div.appendChild(info);
+    div.appendChild(btn);
     inventarioLista.appendChild(div);
   });
 }
 
-document.getElementById("btnEquiparMejores").onclick = () => {
+// ============================
+// EQUIPAR MEJORES
+// ============================
+btnEquiparMejores.addEventListener("click", () => {
   equipadas = [];
-  const ordenadas = [...inventario].sort((a,b) => b.mult - a.mult);
-  for (let i = 0; i < Math.min(3, ordenadas.length); i++) equipadas.push(ordenadas[i]);
+  const ordenadas = [...inventario].sort((a, b) => b.mult - a.mult);
+  for (let i = 0; i < Math.min(3, ordenadas.length); i++) {
+    equipadas.push(ordenadas[i]);
+  }
   actualizarUI();
-};
+});
 
-document.getElementById("btnFusionarTodo").onclick = () => {
-  if (inventario.length < 2) return alert("Necesitas 2 o más");
+// ============================
+// FUSIÓN
+// ============================
+btnFusionarTodo.addEventListener("click", () => {
+  if (inventario.length < 2) {
+    alert("Necesitas al menos 2 mascotas para fusionar");
+    return;
+  }
+
   let suma = 0;
   inventario.forEach(m => suma += m.mult);
-  inventario = [{ rareza: "Fusionada", mult: parseFloat((suma * 0.6).toFixed(2)) }];
+
+  let nueva = {
+    rareza: "Fusionada",
+    mult: parseFloat((suma * 0.6).toFixed(2))
+  };
+
+  inventario = [nueva];
   equipadas = [];
   actualizarUI();
-};
+});
 
-// Prestigio
-document.getElementById("btnPrestigio").onclick = () => {
+// ============================
+// MEJORA RULETA
+// ============================
+btnMejorarRuleta.addEventListener("click", () => {
+  if (ruletaNivel >= 5) {
+    alert("La ruleta ya está al máximo nivel");
+    return;
+  }
+  const costo = 1000 * (ruletaNivel + 1);
+  if (clicks < costo) {
+    alert("No tienes suficientes clicks");
+    return;
+  }
+  clicks -= costo;
+  ruletaNivel++;
+  actualizarUI();
+});
+
+// ============================
+// PRESTIGIO
+// ============================
+btnPrestigio.addEventListener("click", () => {
   const costo = 250 * (prestigios + 1);
-  if (clicks < costo) return alert("No tienes clicks");
+  if (clicks < costo) {
+    alert("No tienes suficientes clicks para renacer");
+    return;
+  }
+
   clicks = 0;
   prestigios++;
   multiplicadorPrestigio = 1 + prestigios * 0.5;
+
   inventario = [];
   equipadas = [];
-  lanzarConfeti();
+
   actualizarUI();
-};
+});
 
-// Modal
-const modal = document.getElementById("modalMascota");
-const modalContenido = document.getElementById("modalContenido");
-document.getElementById("modalCerrar").onclick = () => cerrarModal();
-
-function abrirModal(m) {
-  modalContenido.innerHTML = `<h3>${m.rareza}</h3><p>Multiplicador: x${m.mult}</p>`;
-  modal.classList.add("activo");
-}
-function cerrarModal() {
-  modal.classList.remove("activo");
-}
-
-// Confeti
-function lanzarConfeti() {
-  for (let i = 0; i < 100; i++) {
-    const c = document.createElement("div");
-    c.className = "confetti";
-    c.style.left = Math.random() * 100 + "vw";
-    c.style.background = `hsl(${Math.random()*360},100%,50%)`;
-    document.body.appendChild(c);
-    setTimeout(() => c.remove(), 2000);
-  }
-}
-
-// Guardado
+// ============================
+// GUARDADO
+// ============================
 function guardar() {
-  const data = { clicks, prestigios, multiplicadorPrestigio, inventario, equipadas, inventarioMax };
+  const data = {
+    clicks,
+    prestigios,
+    multiplicadorPrestigio,
+    inventario,
+    equipadas,
+    inventarioMax,
+    ruletaNivel
+  };
   localStorage.setItem("clickerSave", JSON.stringify(data));
 }
+
 function cargar() {
   const data = JSON.parse(localStorage.getItem("clickerSave"));
   if (!data) return;
+
   clicks = data.clicks || 0;
   prestigios = data.prestigios || 0;
   multiplicadorPrestigio = data.multiplicadorPrestigio || 1;
   inventario = data.inventario || [];
   equipadas = data.equipadas || [];
   inventarioMax = data.inventarioMax || 50;
+  ruletaNivel = data.ruletaNivel || 0;
 }
 
+// ============================
+// INICIO
+// ============================
 cargar();
 actualizarUI();
