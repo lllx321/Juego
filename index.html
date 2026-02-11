@@ -3,145 +3,93 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Clicker con Mascotas — Versión Pulida</title>
-
-  <!-- CSS integrado (fácil de probar). Si quieres lo separo luego en style.css -->
-  <style>
-    :root{
-      --bg:#0d0f18;
-      --panel:#111326;
-      --accent:#2b3160;
-      --muted:#98a0c8;
-      --gold:#ffd166;
-      --card:#151731;
-      --glass: rgba(255,255,255,0.03);
-    }
-    *{box-sizing:border-box;font-family: Inter, system-ui, Arial, sans-serif}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0c11 0%, #0d0f18 100%);color:#e9eef8}
-    /* Top bar */
-    #topBar{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;background:linear-gradient(90deg,var(--panel), #0b1230);border-bottom:1px solid rgba(255,255,255,0.03);position:relative;z-index:20}
-    #topBar .controls{position:absolute;left:12px;display:flex;gap:8px}
-    #topBar button{background:var(--accent);border:0;padding:8px 12px;border-radius:10px;color:#fff;cursor:pointer;box-shadow:0 6px 18px rgba(8,10,20,0.6)}
-    #topBar .title{background:rgba(255,255,255,0.03);padding:6px 14px;border-radius:8px}
-
-    /* Layout grid: left panel / center / right panel */
-    .container{display:grid;grid-template-columns: 320px 1fr 320px;gap:12px;padding:18px;height:calc(100vh - 64px);overflow:hidden}
-    /* panels */
-    .panel{background:linear-gradient(180deg,var(--panel), #0f1530);border-radius:12px;padding:14px;overflow:auto;border:1px solid rgba(255,255,255,0.03)}
-    /* left/right collapse states (for toggles) */
-    .panel.hidden{transform: translateX(-16px) scale(.98);opacity:.0;pointer-events:none;height:0;padding:0;margin:0;border:0}
-
-    /* center card */
-    #centerCard{max-width:640px;margin:0 auto;background:linear-gradient(180deg,#111429, #0d1128);padding:22px;border-radius:14px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 10px 30px rgba(8,10,20,0.5);text-align:center}
-    #centerCard h1{font-size:34px;margin:0 0 8px}
-    #centerCard h2{font-size:20px;margin:0 0 18px;color:var(--muted)}
-    #btnClick{background:#f6f7fb;color:#0d1020;border-radius:12px;padding:18px 36px;font-size:20px;border:0;cursor:pointer;box-shadow:0 8px 20px rgba(15,20,40,0.6)}
-    #btnClick:active{transform:scale(.98)}
-    #anuncioMascota{min-height:20px;margin-top:14px;color:var(--gold);font-weight:600}
-
-    /* ruleta / inventory styles */
-    .sectionTitle{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .btnRow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-    .smallBtn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
-    .smallBtn.primary{background:linear-gradient(90deg,#27408a,#2b3160);color:#fff;border:0}
-
-    /* inventory list */
-    #inventarioLista{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-    .mascotaCard{display:flex;justify-content:space-between;align-items:center;background:var(--card);padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);cursor:pointer}
-    .mascotaCard .meta{display:flex;flex-direction:column;gap:2px}
-    .mascotaCard .name{font-weight:600}
-    .mascotaCard .rare{font-size:12px;color:var(--muted)}
-    .mascotaCard .actions{display:flex;gap:8px}
-    .mascotaCard button{padding:6px 10px;border-radius:8px;border:0;background:rgba(255,255,255,0.04);color:#fff;cursor:pointer}
-    .mascotaCard.fusionable{box-shadow:0 0 12px 2px rgba(255,205,80,0.08);border:1px solid rgba(255,205,80,0.18)}
-
-    /* modal */
-    #modalMascota{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.65);z-index:60}
-    #modalMascota.activo{display:flex}
-    #modalCaja{background:linear-gradient(180deg,#0b0f22,#0b1128);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);width:min(92%,420px);box-shadow:0 18px 40px rgba(3,6,20,0.7)}
-    #modalCaja h3{margin:0 0 6px}
-    #modalCaja p{color:var(--muted);margin:6px 0}
-
-    /* responsive */
-    @media (max-width: 940px){
-      .container{grid-template-columns: 1fr;grid-auto-rows: auto;overflow:auto}
-      #panelMascotas, #panelTienda{display:none}
-      #topBar .controls{left:auto;right:12px}
-    }
-  </style>
+  <title>Clicker con Mascotas — Tienda + Rebirth</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <div id="topBar">
+  <header id="topBar">
     <div class="controls">
-      <button id="toggleLeft">🐾</button>
-      <button id="toggleRight">🛒</button>
+      <button id="toggleLeft" title="Mostrar/Ocultar panel izquierdo">🐾</button>
+      <button id="toggleRight" title="Mostrar/Ocultar tienda">🛒</button>
     </div>
-    <div class="title">🐾 Clicker con Mascotas — TU Versión</div>
-  </div>
+    <div class="title">🐾 Clicker con Mascotas</div>
+  </header>
 
-  <div class="container">
-    <!-- LEFT PANEL: Ruleta + Inventario -->
-    <div class="panel" id="panelMascotas">
-      <div class="sectionTitle">
-        <h3>🎰 Ruleta</h3>
-        <small id="ruletaInfo" style="color:var(--muted)"></small>
-      </div>
+  <main class="container">
+    <!-- Left: Ruleta + Inventario -->
+    <aside class="panel" id="panelMascotas">
+      <section class="card">
+        <div class="sectionTitle">
+          <h3>🎰 Ruleta</h3>
+          <small id="ruletaInfo"></small>
+        </div>
 
-      <div class="card" style="background:var(--glass);padding:10px;border-radius:10px;margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-size:13px;color:var(--muted)">Costo por giro</div>
-            <div style="font-weight:700"> <span id="ruletaCosto">100</span> clicks</div>
-          </div>
-          <div>
-            <button class="smallBtn primary" id="btnGirar1">Girar x1</button>
-            <button class="smallBtn" id="btnGirar10">x10</button>
-            <button class="smallBtn" id="btnGirar50">x50</button>
-            <button class="smallBtn" id="btnGirarMax">MAX</button>
+        <div class="ruletaBox">
+          <div class="costRow">
+            <div>Costo por giro: <b><span id="ruletaCosto">100</span></b> clicks</div>
+            <div class="btns">
+              <button class="smallBtn primary" id="btnGirar1">Girar x1</button>
+              <button class="smallBtn" id="btnGirar10">x10</button>
+              <button class="smallBtn" id="btnGirar50">x50</button>
+              <button class="smallBtn" id="btnGirarMax">MAX</button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="sectionTitle"><h3>🐾 Inventario</h3><small class="hint">Gestiona tus mascotas</small></div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button class="smallBtn" id="btnEquiparMejores">⭐ Equipar mejores</button>
-        <button class="smallBtn" id="btnFusionarTodo">🔀 Fusionar todas</button>
-      </div>
-
-      <div style="margin-bottom:8px;color:var(--muted)">Mascotas: <b><span id="invCount">0</span></b> / <span id="invMax">50</span></div>
-      <div id="inventarioLista"></div>
-    </div>
-
-    <!-- CENTER -->
-    <div id="centerCard" style="align-self:start;">
-      <h1>Clicks: <span id="clicks">0</span></h1>
-      <h2>Multiplicador total: x<span id="multTotal">1</span></h2>
-      <div style="margin-top:16px">
-        <button id="btnClick">CLICK 💥</button>
-      </div>
-      <div id="anuncioMascota" aria-live="polite"></div>
-    </div>
-
-    <!-- RIGHT PANEL: Tienda / Prestigio -->
-    <div class="panel" id="panelTienda">
-      <h3>🛒 Tienda</h3>
-      <div style="background:var(--glass);padding:10px;border-radius:10px">
-        <div style="font-size:13px;color:var(--muted)">Prestigios</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-          <div><b id="prestigios">0</b> <div style="color:var(--muted);font-size:13px">Costo: <span id="prestigioCosto">250</span></div></div>
-          <div><button class="smallBtn primary" id="btnPrestigio">Renacer</button></div>
+      <section class="card">
+        <div class="sectionTitle">
+          <h3>🐾 Inventario</h3>
+          <div>Mascotas: <b><span id="invCount">0</span></b> / <span id="invMax">50</span></div>
         </div>
-      </div>
-      <div style="height:12px"></div>
-      <div style="color:var(--muted);font-size:13px">Consejo: las Cósmicas son ultra raras 🌠</div>
-    </div>
-  </div>
 
-  <!-- MODAL -->
-  <div id="modalMascota" role="dialog" aria-modal="true">
-    <div id="modalCaja">
-      <div style="display:flex;justify-content:flex-end"><button id="modalCerrar" style="background:none;border:0;color:var(--muted);cursor:pointer">✖</button></div>
+        <div class="rowBtns">
+          <button class="smallBtn" id="btnEquiparMejores">⭐ Equipar mejores</button>
+          <button class="smallBtn" id="btnFusionarTodo">🔀 Fusionar todas</button>
+        </div>
+
+        <div id="inventarioLista" class="list"></div>
+      </section>
+    </aside>
+
+    <!-- Center: Clicker -->
+    <section id="centerCard" class="panel center">
+      <div class="card centerInner">
+        <h1>Clicks: <span id="clicks">0</span></h1>
+        <h2>Multiplicador total: x<span id="multTotal">1.00</span></h2>
+
+        <div style="margin-top:14px">
+          <button id="btnClick" class="bigClick">CLICK 💥</button>
+        </div>
+
+        <div id="anuncioMascota" class="announce" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- Right: Tienda -->
+    <aside class="panel" id="panelTienda">
+      <section class="card">
+        <div class="sectionTitle">
+          <h3>🛒 Tienda</h3>
+          <small>Mejoras disponibles</small>
+        </div>
+
+        <div id="shopList" class="shopList"></div>
+      </section>
+
+      <section class="card" style="margin-top:12px">
+        <h3>⭐ Prestigio</h3>
+        <div>Prestigios: <b id="prestigios">0</b></div>
+        <div>Costo: <b><span id="prestigioCosto">250</span></b></div>
+        <div style="margin-top:8px"><button class="smallBtn primary" id="btnPrestigio">Renacer</button></div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- Modal de mascota -->
+  <div id="modalMascota" class="modal" aria-hidden="true">
+    <div id="modalCaja" class="modalBox">
+      <button id="modalCerrar" class="modalClose">✖</button>
       <div id="modalContenido"></div>
     </div>
   </div>
