@@ -1,11 +1,11 @@
 // ============================
-// ESTADO
+// VARIABLES
 // ============================
 let clicks = 0;
 let prestigios = 0;
 let multiplicadorPrestigio = 1;
-
 let bonusMejoras = 0;
+
 let inventarioMax = 50;
 let inventario = [];
 let equipadas = [];
@@ -13,24 +13,23 @@ let equipadas = [];
 const COSTO_RULETA = 100;
 
 // ============================
-// RAREZAS (8 TIERS)
-// Probabilidades: Cósmica << Celestial (0.1%)
+// RAREZAS
 // ============================
 const rarezas = [
-  { nombre: "Común", tier: 1, chance: 55, multMin: 1.05, multMax: 1.8 },
-  { nombre: "Poco común", tier: 2, chance: 25, multMin: 1.8, multMax: 3.0 },
-  { nombre: "Rara", tier: 3, chance: 10, multMin: 3.0, multMax: 6.0 },
-  { nombre: "Épica", tier: 4, chance: 6, multMin: 6.0, multMax: 12.0 },
-  { nombre: "Legendaria", tier: 5, chance: 3.5, multMin: 12.0, multMax: 25.0 },
-  { nombre: "Mítica", tier: 6, chance: 0.39, multMin: 25.0, multMax: 45.0 },
-  { nombre: "Celestial", tier: 7, chance: 0.1, multMin: 45.0, multMax: 80.0 },
-  { nombre: "Cósmica", tier: 8, chance: 0.01, multMin: 80.0, multMax: 120.0 }
+  { nombre: "Común", chance: 55, multMin: 1, multMax: 2 },
+  { nombre: "Poco común", chance: 25, multMin: 2, multMax: 4 },
+  { nombre: "Rara", chance: 10, multMin: 4, multMax: 8 },
+  { nombre: "Épica", chance: 5, multMin: 8, multMax: 15 },
+  { nombre: "Legendaria", chance: 3, multMin: 15, multMax: 30 },
+  { nombre: "Mítica", chance: 1.5, multMin: 30, multMax: 50 },
+  { nombre: "Celestial", chance: 0.4, multMin: 50, multMax: 80 },
+  { nombre: "Cósmica", chance: 0.1, multMin: 80, multMax: 120 }
 ];
 
 // ============================
-// LISTAS DE NOMBRES POR TIER
+// MASCOTAS POR NIVEL
 // ============================
-const nombresPorTier = {
+const mascotasPorNivel = {
   1: ["Nube","Coco","Miel","Pixel","Chispa","Panqué","Tofu","Lilo","Copo","Bombo","Canela","Pompón","Bolita","Trufa","Pelusa","Nacho","Bubu","Tiki","Choco","Motita","Fresita","Churro"],
   2: ["Bruno","Kira","Dante","Nova","Atlas","Milo","Nala","Toby","Rocco","Duna","Simba","Otto","Kiara","Balto","Uma","Nico","Frida","Bento","Sasha"],
   3: ["Orion","Freya","Ragnar","Vega","Leónidas","Apollo","Arya","Loki","Zafiro","Kaida","Ares","Lyra","Cairo","Kenzo","Indigo","Soren"],
@@ -41,24 +40,15 @@ const nombresPorTier = {
   8: ["Elarion","Thyrian"]
 };
 
-// Relaciones simples para el lore
-const amistades = {
-  "Orion": ["Vega","Lyra"],
-  "Nova": ["Atlas"],
-  "Fenrir": ["Valkor"],
-  "Solaris": ["Eclipse"],
-  "Aurelion": ["Aurorath"],
-  "Elarion": ["Thyrian"]
-};
-const rivalidades = {
-  "Nyx": ["Solaris"],
-  "Obsidian": ["Luminary"],
-  "Noctyra": ["Aurelion"],
-  "Eclipse": ["Solaris"]
-};
+// ============================
+// DESCRIPCIONES
+// ============================
+function descripcionMascota(nombre, rareza) {
+  return `${nombre} es una mascota de rareza ${rareza}. Se dice que su energía influye en otras mascotas: algunas lo admiran, otras le temen. Cuando está equipada, su poder se suma a tu multiplicador.`;
+}
 
 // ============================
-// ELEMENTOS
+// ELEMENTOS HTML
 // ============================
 const clicksSpan = document.getElementById("clicks");
 const multTotalSpan = document.getElementById("multTotal");
@@ -82,28 +72,23 @@ const prestigiosSpan = document.getElementById("prestigios");
 const prestigioCostoSpan = document.getElementById("prestigioCosto");
 const btnPrestigio = document.getElementById("btnPrestigio");
 
-const panelMascotas = document.getElementById("panelMascotas");
-const panelTienda = document.getElementById("panelTienda");
-document.getElementById("btnMascotas").onclick = () => panelMascotas.classList.toggle("activo");
-document.getElementById("btnTienda").onclick = () => panelTienda.classList.toggle("activo");
-
-// Modal
 const modal = document.getElementById("modalMascota");
 const modalContenido = document.getElementById("modalContenido");
-document.getElementById("modalCerrar").onclick = () => modal.classList.remove("activo");
-modal.onclick = (e) => { if (e.target === modal) modal.classList.remove("activo"); };
+const modalCerrar = document.getElementById("modalCerrar");
 
 // ============================
-// CÁLCULOS
+// FUNCIONES
 // ============================
 function calcularBonusMascotas() {
-  return equipadas.reduce((a, m) => a + m.mult, 0);
-}
-function calcularMultiplicadorTotal() {
-  const base = 1;
-  const total = (base + calcularBonusMascotas() + bonusMejoras) * multiplicadorPrestigio;
+  let total = 0;
+  equipadas.forEach(m => total += m.mult);
   return total;
 }
+
+function calcularMultiplicadorTotal() {
+  return (1 + calcularBonusMascotas() + bonusMejoras) * multiplicadorPrestigio;
+}
+
 function actualizarUI() {
   clicksSpan.textContent = Math.floor(clicks);
   multTotalSpan.textContent = calcularMultiplicadorTotal().toFixed(2);
@@ -114,6 +99,7 @@ function actualizarUI() {
   renderInventario();
   guardar();
 }
+
 btnClick.addEventListener("click", () => {
   clicks += calcularMultiplicadorTotal();
   actualizarUI();
@@ -123,164 +109,132 @@ btnClick.addEventListener("click", () => {
 // RULETA
 // ============================
 function tirarRuleta(veces) {
-  const espacioDisponible = inventarioMax - inventario.length;
-  if (espacioDisponible <= 0) return alert("Inventario lleno");
-  const maxTiradas = Math.min(veces, espacioDisponible);
-  const costoTotal = maxTiradas * COSTO_RULETA;
-  if (clicks < costoTotal) return alert("No tienes suficientes clicks");
-  clicks -= costoTotal;
+  let espacio = inventarioMax - inventario.length;
+  if (espacio <= 0) return alert("Inventario lleno");
 
-  for (let i = 0; i < maxTiradas; i++) {
-    const mascota = generarMascota();
-    inventario.push(mascota);
-    anuncioMascota.textContent = `Obtuviste: ${mascota.nombre} (${mascota.rareza}) x${mascota.mult.toFixed(2)}`;
+  let tiradas = Math.min(veces, espacio);
+  let costo = tiradas * COSTO_RULETA;
+  if (clicks < costo) return alert("No tienes clicks");
+
+  clicks -= costo;
+
+  for (let i = 0; i < tiradas; i++) {
+    let m = generarMascota();
+    inventario.push(m);
+    anuncioMascota.textContent = `Obtuviste: ${m.nombre} (${m.rareza}) x${m.mult}`;
   }
   actualizarUI();
 }
-function elegirRareza() {
-  const roll = Math.random() * 100;
-  let acc = 0;
-  for (const r of rarezas) {
-    acc += r.chance;
-    if (roll <= acc) return r;
-  }
-  return rarezas[0];
-}
-function generarDescripcion(nombre, rareza) {
-  let base = `${nombre} es una criatura de rareza ${rareza.nombre}. Aporta su poder con constancia y personalidad única.`;
-  if (amistades[nombre]) base += ` Se lleva especialmente bien con ${amistades[nombre].join(" y ")}.`;
-  if (rivalidades[nombre]) base += ` Tiene una rivalidad conocida con ${rivalidades[nombre].join(" y ")}.`;
-  if (rareza.tier >= 7) base += " Su presencia se siente como un evento en sí mismo.";
-  if (rareza.tier === 8) base += " Dicen que verla es casi irrepetible.";
-  return base;
-}
+
 function generarMascota() {
-  const r = elegirRareza();
-  const lista = nombresPorTier[r.tier];
+  let roll = Math.random() * 100;
+  let acc = 0;
+  let rarezaElegida = rarezas[0];
+
+  for (let r of rarezas) {
+    acc += r.chance;
+    if (roll <= acc) { rarezaElegida = r; break; }
+  }
+
+  const nivel = rarezas.indexOf(rarezaElegida) + 1;
+  const lista = mascotasPorNivel[nivel];
   const nombre = lista[Math.floor(Math.random() * lista.length)];
-  const mult = r.multMin + Math.random() * (r.multMax - r.multMin);
+  const mult = rarezaElegida.multMin + Math.random() * (rarezaElegida.multMax - rarezaElegida.multMin);
+
   return {
     nombre,
-    rareza: r.nombre,
-    tier: r.tier,
+    rareza: rarezaElegida.nombre,
     mult: parseFloat(mult.toFixed(2)),
-    descripcion: generarDescripcion(nombre, r)
+    descripcion: descripcionMascota(nombre, rarezaElegida.nombre)
   };
 }
+
 btnGirar1.onclick = () => tirarRuleta(1);
 btnGirar10.onclick = () => tirarRuleta(10);
 btnGirar50.onclick = () => tirarRuleta(50);
 btnGirarMax.onclick = () => tirarRuleta(inventarioMax);
 
 // ============================
-// INVENTARIO + MODAL
+// INVENTARIO
 // ============================
 function renderInventario() {
   inventarioLista.innerHTML = "";
-  inventario.forEach((m, index) => {
+  inventario.forEach((m) => {
     const div = document.createElement("div");
-    div.className = "card mascotaCard";
     const equipada = equipadas.includes(m);
+    div.innerHTML = `<b>${m.nombre}</b> (${m.rareza}) x${m.mult}<br>
+    <button>${equipada ? "Desequipar" : "Equipar"}</button>
+    <button>Info</button>`;
 
-    // Señal de fusionable (si hay 2+ del mismo tier)
-    const sameTierCount = inventario.filter(x => x.tier === m.tier).length;
-    if (sameTierCount >= 2) div.classList.add("fusionable");
+    const [btnEq, btnInfo] = div.querySelectorAll("button");
 
-    div.innerHTML = `
-      <div>
-        <b>${m.nombre}</b> <small>(${m.rareza})</small><br/>
-        x${m.mult.toFixed(2)} ${equipada ? " — <b>Equipada</b>" : ""}
-      </div>
-      <div>
-        <button class="btnEquip">${equipada ? "Quitar" : "Equipar"}</button>
-      </div>
-    `;
-    div.querySelector(".btnEquip").onclick = (e) => {
-      e.stopPropagation();
-      if (equipada) {
-        equipadas = equipadas.filter(x => x !== m);
-      } else {
-        if (equipadas.length >= 3) return alert("Solo puedes equipar 3 mascotas");
+    btnEq.onclick = () => {
+      if (equipada) equipadas = equipadas.filter(e => e !== m);
+      else {
+        if (equipadas.length >= 3) return alert("Solo 3 mascotas equipadas");
         equipadas.push(m);
       }
       actualizarUI();
     };
-    div.onclick = () => abrirModal(m);
+
+    btnInfo.onclick = () => {
+      modalContenido.innerHTML = `<h3>${m.nombre}</h3><p><b>Rareza:</b> ${m.rareza}</p><p><b>Multiplicador:</b> x${m.mult}</p><p>${m.descripcion}</p>`;
+      modal.style.display = "flex";
+    };
+
     inventarioLista.appendChild(div);
   });
 }
-function abrirModal(m) {
-  modalContenido.innerHTML = `
-    <h3>${m.nombre}</h3>
-    <p><b>Rareza:</b> ${m.rareza}</p>
-    <p><b>Multiplicador:</b> x${m.mult.toFixed(2)}</p>
-    <p>${m.descripcion}</p>
-  `;
-  modal.classList.add("activo");
-}
+
+modalCerrar.onclick = () => modal.style.display = "none";
 
 // ============================
 // EQUIPAR MEJORES
 // ============================
 btnEquiparMejores.onclick = () => {
-  equipadas = [];
-  const ordenadas = [...inventario].sort((a, b) => b.mult - a.mult);
-  for (let i = 0; i < Math.min(3, ordenadas.length); i++) equipadas.push(ordenadas[i]);
+  equipadas = [...inventario].sort((a,b)=>b.mult-a.mult).slice(0,3);
   actualizarUI();
 };
 
 // ============================
-// FUSIÓN (simple)
+// FUSIÓN
 // ============================
 btnFusionarTodo.onclick = () => {
-  if (inventario.length < 2) return alert("Necesitas al menos 2 mascotas");
-  let suma = 0;
-  inventario.forEach(m => suma += m.mult);
-  const nueva = {
-    nombre: "Fusionada",
+  if (inventario.length < 2) return alert("Necesitas 2 mascotas");
+  let suma = inventario.reduce((s,m)=>s+m.mult,0);
+  inventario = [{
+    nombre: "Quimera",
     rareza: "Fusionada",
-    tier: 0,
-    mult: parseFloat((suma * 0.6).toFixed(2)),
-    descripcion: "Resultado de una poderosa fusión de energías."
-  };
-  inventario = [nueva];
+    mult: parseFloat((suma*0.6).toFixed(2)),
+    descripcion: "Una criatura nacida de la unión de muchas almas."
+  }];
   equipadas = [];
   actualizarUI();
 };
 
 // ============================
-// PRESTIGIO + CONFETI
+// PRESTIGIO
 // ============================
 btnPrestigio.onclick = () => {
   const costo = 250 * (prestigios + 1);
-  if (clicks < costo) return alert("No tienes suficientes clicks para renacer");
+  if (clicks < costo) return alert("No tienes clicks");
   clicks = 0;
   prestigios++;
   multiplicadorPrestigio = 1 + prestigios * 0.5;
   inventario = [];
   equipadas = [];
-  lanzarConfeti();
   actualizarUI();
 };
-function lanzarConfeti() {
-  for (let i = 0; i < 120; i++) {
-    const d = document.createElement("div");
-    d.className = "confeti";
-    d.style.left = Math.random() * 100 + "vw";
-    d.style.background = `hsl(${Math.random()*360},80%,60%)`;
-    d.style.animationDuration = (1 + Math.random()*1.5) + "s";
-    document.body.appendChild(d);
-    setTimeout(() => d.remove(), 2000);
-  }
-}
 
 // ============================
 // GUARDADO
 // ============================
 function guardar() {
-  const data = { clicks, prestigios, multiplicadorPrestigio, inventario, equipadas, inventarioMax };
-  localStorage.setItem("clickerSave", JSON.stringify(data));
+  localStorage.setItem("clickerSave", JSON.stringify({
+    clicks, prestigios, multiplicadorPrestigio, inventario, equipadas, inventarioMax
+  }));
 }
+
 function cargar() {
   const data = JSON.parse(localStorage.getItem("clickerSave"));
   if (!data) return;
