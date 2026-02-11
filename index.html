@@ -2,152 +2,135 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Clicker con Mascotas</title>
+  <title>Clicker con Mascotas — Definitiva</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    * { box-sizing: border-box; font-family: system-ui, sans-serif; }
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f1220;
-      color: #eee;
-      display: grid;
-      grid-template-columns: 300px 1fr 300px;
-      height: 100vh;
+      margin: 0; background: #0f1220; color: #e9ecff;
+      display: grid; grid-template-rows: auto 1fr;
+      height: 100vh; overflow: hidden;
     }
-
-    h1, h2, h3 {
-      margin: 8px 0;
+    #topBar {
+      display: flex; gap: 10px; padding: 10px; background: #14173a;
+      border-bottom: 1px solid #2a2f6b;
+      position: relative; z-index: 5;
     }
+    #topBar button { padding: 8px 12px; border-radius: 10px; border: 0; cursor: pointer; }
+    #topBar button:hover { filter: brightness(1.1); }
 
-    button {
-      background: #2a2f55;
-      color: #fff;
-      border: none;
-      padding: 8px 12px;
-      margin: 4px 0;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #3a4090;
+    .layout {
+      position: relative; height: 100%;
+      display: grid; grid-template-columns: 1fr; 
     }
 
     .panel {
-      padding: 12px;
-      overflow-y: auto;
-      border-right: 1px solid #222;
+      position: fixed; top: 48px; bottom: 0; width: 320px;
+      background: #121538; border-right: 1px solid #2a2f6b;
+      overflow-y: auto; padding: 12px;
+      transition: transform .3s ease;
+      z-index: 4;
     }
-
-    #panelTienda {
-      border-right: none;
-      border-left: 1px solid #222;
-    }
+    #panelMascotas { left: 0; transform: translateX(-100%); }
+    #panelTienda { right: 0; transform: translateX(100%); border-right: 0; border-left: 1px solid #2a2f6b; }
+    .panel.activo { transform: translateX(0); }
 
     #game {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 12px;
+      display: grid; place-items: center; text-align: center;
+      padding: 20px;
     }
-
     #btnClick {
-      font-size: 24px;
-      padding: 16px 32px;
-      background: #ff3b3b;
+      font-size: 28px; padding: 18px 28px; border-radius: 18px; border: 0; cursor: pointer;
+      transition: transform .05s ease, filter .1s ease;
     }
+    #btnClick:active { transform: scale(.97); filter: brightness(1.1); }
 
-    #btnClick:hover {
-      background: #ff5b5b;
+    .card {
+      background: #0f1230; border: 1px solid #2a2f6b; border-radius: 12px;
+      padding: 8px; margin-bottom: 8px;
     }
-
-    .box {
-      background: #171a2e;
-      border-radius: 8px;
-      padding: 8px;
-      margin-bottom: 10px;
+    .mascotaCard {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+      cursor: pointer;
     }
+    .mascotaCard small { opacity: .8; }
+    .mascotaCard button { padding: 6px 10px; border-radius: 10px; border: 0; cursor: pointer; }
+    .fusionable { border: 2px solid gold; box-shadow: 0 0 10px gold; }
 
-    .mascota {
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 6px;
-      margin: 4px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 14px;
+    #modalMascota {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      display: none; align-items: center; justify-content: center;
+      z-index: 10; opacity: 0; transition: opacity .2s ease;
     }
-
-    .equipada {
-      background: #1f3a2f;
+    #modalMascota.activo { display: flex; opacity: 1; }
+    #modalCaja {
+      background: #0f1230; border: 1px solid #2a2f6b; border-radius: 16px;
+      padding: 16px; width: min(92vw, 420px); position: relative;
     }
+    #modalCerrar { position: absolute; right: 10px; top: 8px; cursor: pointer; }
 
-    .rareza-Común { color: #bbb; }
-    .rareza-Rara { color: #4aa3ff; }
-    .rareza-Épica { color: #b14aff; }
-    .rareza-Legendaria { color: #ffb84a; }
-    .rareza-Celestial { color: #ff4aff; }
-    .rareza-Fusionada { color: #4affc3; }
-
-    #anuncioMascota {
-      min-height: 20px;
-      font-weight: bold;
-      color: #ffd84a;
+    .confeti {
+      position: fixed; top: -10px; width: 8px; height: 12px; opacity: .9;
+      animation: caer 1.5s linear forwards, girar .8s linear infinite;
+      z-index: 9;
     }
+    @keyframes caer { to { transform: translateY(110vh); } }
+    @keyframes girar { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-  <!-- PANEL IZQUIERDO -->
-  <div class="panel" id="panelMascotas">
-    <div class="box">
+  <div id="topBar">
+    <button id="btnMascotas">🐾 Mascotas</button>
+    <button id="btnTienda">🛒 Tienda</button>
+  </div>
+
+  <div class="layout">
+    <!-- Panel izquierdo -->
+    <div class="panel" id="panelMascotas">
       <h2>🎰 Ruleta</h2>
-      <p>Nivel de ruleta: <span id="ruletaNivel">0</span></p>
-      <p>Costo de giro: <span id="ruletaCosto">100</span> clicks</p>
-
-      <button id="btnGirar1">Girar x1</button>
-      <button id="btnGirar10">Girar x10</button>
-      <button id="btnGirar50">Girar x50</button>
-      <button id="btnGirarMax">Girar MAX</button>
-    </div>
-
-    <div class="box">
+      <p>Costo de giro: <b><span id="ruletaCosto">100</span></b> clicks</p>
+      <div style="margin-bottom:10px">
+        <button id="btnGirar1">Girar x1</button>
+        <button id="btnGirar10">Girar x10</button>
+        <button id="btnGirar50">Girar x50</button>
+        <button id="btnGirarMax">Girar MAX</button>
+      </div>
+      <hr>
       <h2>🐾 Inventario</h2>
       <p>Mascotas: <span id="invCount">0</span> / <span id="invMax">50</span></p>
-
-      <button id="btnEquiparMejores">⭐ Equipar mejores</button>
-      <button id="btnFusionarTodo">🔀 Fusionar todas</button>
-
+      <div style="margin-bottom:10px">
+        <button id="btnEquiparMejores">⭐ Equipar mejores</button>
+        <button id="btnFusionarTodo">🔀 Fusionar todas</button>
+      </div>
       <div id="inventarioLista"></div>
     </div>
-  </div>
 
-  <!-- ZONA CENTRAL -->
-  <div id="game">
-    <h1>Clicks: <span id="clicks">0</span></h1>
-    <h2>Multiplicador total: x<span id="multTotal">1</span></h2>
-    <button id="btnClick">CLICK 💥</button>
-    <p id="anuncioMascota"></p>
-  </div>
-
-  <!-- PANEL DERECHO -->
-  <div class="panel" id="panelTienda">
-    <div class="box">
+    <!-- Panel derecho -->
+    <div class="panel" id="panelTienda">
       <h2>🛒 Tienda</h2>
-
-      <h3>Mejorar Ruleta</h3>
-      <p>Nivel: <span id="mejoraRuletaNivel">0</span> / 5</p>
-      <p>Costo: <span id="mejoraRuletaCosto">1000</span> clicks</p>
-      <button id="btnMejorarRuleta">Mejorar ruleta</button>
+      <div class="card">
+        <h3>⭐ Prestigios</h3>
+        <p>Prestigios: <span id="prestigios">0</span></p>
+        <p>Costo: <span id="prestigioCosto">250</span></p>
+        <button id="btnPrestigio">Renacer</button>
+      </div>
     </div>
 
-    <div class="box">
-      <h3>⭐ Prestigio</h3>
-      <p>Prestigios: <span id="prestigios">0</span></p>
-      <p>Costo: <span id="prestigioCosto">250</span></p>
-      <button id="btnPrestigio">Renacer</button>
+    <!-- Centro -->
+    <div id="game">
+      <h1>Clicks: <span id="clicks">0</span></h1>
+      <h2>Multiplicador total: x<span id="multTotal">1</span></h2>
+      <button id="btnClick">CLICK 💥</button>
+      <p id="anuncioMascota"></p>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalMascota">
+    <div id="modalCaja">
+      <span id="modalCerrar">❌</span>
+      <div id="modalContenido"></div>
     </div>
   </div>
 
