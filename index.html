@@ -1,99 +1,206 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Clicker con Mascotas — Tienda + Rebirth</title>
+  <meta charset="UTF-8">
+  <title>Clicker con Mascotas - Pro</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background:#111; 
+      color:#eee; 
+      margin: 0; 
+      padding-bottom: 50px;
+    }
+    
+    /* BARRA SUPERIOR CORREGIDA */
+    #topBar { 
+      display: flex; 
+      gap: 15px; 
+      padding: 15px; 
+      background: #1a1a1a; 
+      border-bottom: 2px solid #333;
+      justify-content: center;
+      position: sticky; /* Arreglado: era position sticky */
+      top: 0;           /* Arreglado: faltaba el valor top */
+      z-index: 1000;    /* Para que nada pase por encima al hacer scroll */
+    }
+
+    /* BOTONES DE LA BARRA */
+    #topBar button {
+      font-weight: bold;
+      padding: 10px 20px;
+    }
+
+    #btnEnciclopedia {
+      background: linear-gradient(145deg, #f39c12, #e67e22);
+      border: none;
+      color: white;
+    }
+
+    /* CONTENEDOR PRINCIPAL */
+    #game { text-align:center; padding: 20px; background: #151515; }
+    
+    #mainContainer { 
+      display: flex; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      gap: 20px;
+      padding: 20px; 
+    }
+    
+    .panel { 
+      background: #1a1a1a; 
+      border-radius: 12px; 
+      padding: 20px; 
+      border: 1px solid #333;
+      flex: 1;
+      min-width: 320px;
+      max-width: 500px;
+    }
+
+    /* RAREZAS */
+    .card { border:2px solid #555; margin:8px; padding:10px; border-radius:8px; background:#222; }
+    .comun { border-color:#aaa; }
+    .poco-comun { border-color:#4caf50; }
+    .rara { border-color:#2196f3; }
+    .epica { border-color:#9c27b0; }
+    .legendaria { border-color:#ff9800; }
+    .mitica { border-color:#f44336; }
+    .celestial { border-color:#00e5ff; }
+    .cosmica { border-color:#ffd700; box-shadow:0 0 10px #ffd700; }
+
+    /* ENCICLOPEDIA */
+    #panelEnciclopedia { 
+      display: none; 
+      width: 90%; 
+      max-width: 800px;
+      margin: 20px auto; 
+      background: #1a1a1a; 
+      border: 2px solid #f39c12; 
+      border-radius: 15px;
+    }
+    .grid-enciclopedia {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .slot-enciclopedia {
+      aspect-ratio: 1/1;
+      background: #252525;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      filter: grayscale(100%); 
+      opacity: 0.2;
+      border: 1px dashed #444;
+    }
+    .slot-enciclopedia.discovered {
+      filter: grayscale(0%);
+      opacity: 1;
+      border: 2px solid #f39c12;
+      background: #333;
+    }
+
+    /* BOTÓN DE CLICK PRINCIPAL */
+    #btnClick {
+      font-size: 1.8rem; 
+      padding: 25px 60px; 
+      background: linear-gradient(145deg, #2ecc71, #27ae60);
+      color: white; 
+      border: none; 
+      border-radius: 50px;
+      box-shadow: 0 6px 0 #1e8449; 
+      margin: 20px;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    #btnClick:active { 
+      transform: translateY(4px); 
+      box-shadow: 0 2px 0 #1e8449; 
+    }
+
+    button { 
+      cursor:pointer; border-radius: 6px; 
+      border: 1px solid #444; background: #2a2a2a; color: #fff; 
+      transition: 0.2s;
+    }
+    button:hover { background: #383838; }
+  </style>
 </head>
 <body>
-  <header id="topBar">
-    <div class="controls">
-      <button id="toggleLeft" title="Mostrar/Ocultar panel izquierdo">🐾</button>
-      <button id="toggleRight" title="Mostrar/Ocultar tienda">🛒</button>
+
+<div id="topBar">
+  <button id="btnMascotas">🐾 Inventario</button>
+  <button id="btnTienda">🛒 Tienda</button>
+  <button id="btnEnciclopedia">📖 Enciclopedia</button>
+</div>
+
+<div id="game">
+  <p style="margin:0; color:#888;">Progreso actual</p>
+  <h1 style="margin:10px 0;">Clicks: <span id="clicks">0</span></h1>
+  <h3>Multiplicador: x<span id="multTotal">1</span></h3>
+  <button id="btnClick">¡COSECHAR! 💥</button>
+</div>
+
+<div id="mainContainer">
+  <div id="panelMascotas" class="panel">
+    <h2>🎰 Ruleta de Mascotas</h2>
+    <p>Costo: <span id="ruletaCosto">100</span> clicks</p>
+    <div style="display:flex; gap:5px;">
+      <button id="btnGirar1">Girar x1</button>
+      <button id="btnGirar10">Girar x10</button>
     </div>
-    <div class="title">🐾 Clicker con Mascotas</div>
-  </header>
-
-  <main class="container">
-    <!-- Left: Ruleta + Inventario -->
-    <aside class="panel" id="panelMascotas">
-      <section class="card">
-        <div class="sectionTitle">
-          <h3>🎰 Ruleta</h3>
-          <small id="ruletaInfo"></small>
-        </div>
-
-        <div class="ruletaBox">
-          <div class="costRow">
-            <div>Costo por giro: <b><span id="ruletaCosto">100</span></b> clicks</div>
-            <div class="btns">
-              <button class="smallBtn primary" id="btnGirar1">Girar x1</button>
-              <button class="smallBtn" id="btnGirar10">x10</button>
-              <button class="smallBtn" id="btnGirar50">x50</button>
-              <button class="smallBtn" id="btnGirarMax">MAX</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="sectionTitle">
-          <h3>🐾 Inventario</h3>
-          <div>Mascotas: <b><span id="invCount">0</span></b> / <span id="invMax">50</span></div>
-        </div>
-
-        <div class="rowBtns">
-          <button class="smallBtn" id="btnEquiparMejores">⭐ Equipar mejores</button>
-          <button class="smallBtn" id="btnFusionarTodo">🔀 Fusionar todas</button>
-        </div>
-
-        <div id="inventarioLista" class="list"></div>
-      </section>
-    </aside>
-
-    <!-- Center: Clicker -->
-    <section id="centerCard" class="panel center">
-      <div class="card centerInner">
-        <h1>Clicks: <span id="clicks">0</span></h1>
-        <h2>Multiplicador total: x<span id="multTotal">1.00</span></h2>
-
-        <div style="margin-top:14px">
-          <button id="btnClick" class="bigClick">CLICK 💥</button>
-        </div>
-
-        <div id="anuncioMascota" class="announce" aria-live="polite"></div>
-      </div>
-    </section>
-
-    <!-- Right: Tienda -->
-    <aside class="panel" id="panelTienda">
-      <section class="card">
-        <div class="sectionTitle">
-          <h3>🛒 Tienda</h3>
-          <small>Mejoras disponibles</small>
-        </div>
-
-        <div id="shopList" class="shopList"></div>
-      </section>
-
-      <section class="card" style="margin-top:12px">
-        <h3>⭐ Prestigio</h3>
-        <div>Prestigios: <b id="prestigios">0</b></div>
-        <div>Costo: <b><span id="prestigioCosto">250</span></b></div>
-        <div style="margin-top:8px"><button class="smallBtn primary" id="btnPrestigio">Renacer</button></div>
-      </section>
-    </aside>
-  </main>
-
-  <!-- Modal de mascota -->
-  <div id="modalMascota" class="modal" aria-hidden="true">
-    <div id="modalCaja" class="modalBox">
-      <button id="modalCerrar" class="modalClose">✖</button>
-      <div id="modalContenido"></div>
-    </div>
+    <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+    <h2>🎒 Tu Equipo</h2>
+    <div id="inventarioLista"></div>
   </div>
 
-  <script src="script.js"></script>
+  <div id="panelTienda" class="panel">
+    <h2>🛒 Mejoras y Tienda</h2>
+    <div id="tiendaLista"></div>
+    <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+    <h3>⭐ Prestigio</h3>
+    <button id="btnPrestigio" style="width:100%; padding:15px; background:#4b0082; border:none;">✨ Renacer</button>
+  </div>
+</div>
+
+<div id="panelEnciclopedia" class="panel">
+  <div style="display:flex; justify-content: space-between; align-items: center; padding: 0 20px;">
+    <h2>📖 Enciclopedia</h2>
+    <button onclick="document.getElementById('panelEnciclopedia').style.display='none'" style="background:none; border:none; font-size:1.5rem;">✕</button>
+  </div>
+  <p style="padding: 0 20px; color:#aaa;">Descubre todas las mascotas para desbloquear el poder oculto.</p>
+  <div class="grid-enciclopedia" id="enciclopediaGrid">
+    <div class="slot-enciclopedia discovered">🐶</div>
+    <div class="slot-enciclopedia">❓</div>
+    <div class="slot-enciclopedia">❓</div>
+    <div class="slot-enciclopedia">❓</div>
+    <div class="slot-enciclopedia">❓</div>
+    <div class="slot-enciclopedia">❓</div>
+    <div class="slot-enciclopedia">❓</div>
+    <div class="slot-enciclopedia">❓</div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+  // Lógica básica para intercambiar paneles
+  const btnEnc = document.getElementById('btnEnciclopedia');
+  const panelEnc = document.getElementById('panelEnciclopedia');
+
+  btnEnc.addEventListener('click', () => {
+    // Si está oculto lo muestra, si no lo oculta
+    const isHidden = panelEnc.style.display === 'none' || panelEnc.style.display === '';
+    panelEnc.style.display = isHidden ? 'block' : 'none';
+    
+    if(isHidden) {
+      panelEnc.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+</script>
 </body>
 </html>
